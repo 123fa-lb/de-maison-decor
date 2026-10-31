@@ -1,0 +1,49 @@
+/* Split login inspired by the requested reference; colors mirror the existing dark/gold studio. */
+.ma-auth-page{--ma-gold:#d6a75e;--ma-gold-light:#f0c783;--ma-line:#34363c;--ma-text:#f3f0eb;--ma-muted:#a5a8b1;min-height:100vh;min-height:100dvh;background:#0d0f12;color:var(--ma-text);font-family:Inter,'DM Sans',system-ui,-apple-system,sans-serif}
+.ma-auth-page *{box-sizing:border-box}
+.ma-auth-layout{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:46% 54%}
+.ma-auth-left{background:#14161a;border-right:1px solid #303238;display:flex;align-items:center;justify-content:center;padding:52px 42px}
+.ma-auth-form-wrap{width:100%;max-width:414px}
+.ma-auth-brand{display:flex;align-items:center;gap:15px;margin-bottom:64px}
+.ma-auth-brand img{width:61px;height:61px;object-fit:contain;background:#08090b;border:1px solid #5d4b30;border-radius:12px;padding:5px;box-shadow:0 4px 20px #0005}
+.ma-auth-brand strong{display:block;font-size:15px;letter-spacing:.075em;color:#f6f3ed;line-height:1.4}
+.ma-auth-brand span{display:block;margin-top:4px;color:var(--ma-gold);font-size:10px;letter-spacing:.19em}
+.ma-auth-eyebrow{font-size:10px;font-weight:800;letter-spacing:.23em;color:var(--ma-gold);margin-bottom:18px}
+.ma-auth-login h1{font:normal clamp(31px,3vw,43px)/1.15 Georgia,'Times New Roman',serif;letter-spacing:-.04em;color:#f3f0eb;margin:0 0 14px}
+.ma-auth-subtitle{font-size:13px;color:var(--ma-muted);line-height:1.75;margin:0 0 32px}
+.ma-auth-login form{display:flex;flex-direction:column}
+.ma-auth-login label{font-size:12px;font-weight:650;color:#e2dfd8;margin:0 0 9px}
+.ma-auth-login input{height:48px;width:100%;padding:0 14px;margin:0 0 21px;background:#1d2025;color:#f7f5f0;border:1px solid #3a3d43;border-radius:8px;font:inherit;font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s}
+.ma-auth-login input::placeholder{color:#7c818b}
+.ma-auth-login input:focus{border-color:#c49a5c;box-shadow:0 0 0 3px #d6a75e20}
+.ma-auth-pass{position:relative}.ma-auth-pass input{padding-right:52px}
+.ma-auth-pass button{position:absolute;right:5px;top:4px;width:40px;height:40px;border:0;background:transparent;color:#b1b0ad;display:grid;place-items:center;cursor:pointer}
+.ma-auth-pass button:hover{color:var(--ma-gold-light)}
+.ma-auth-submit{width:100%;height:49px;display:flex;justify-content:center;align-items:center;gap:12px;background:#cda365;border:1px solid #d8b174;border-radius:8px;color:#141516;font-size:13px;font-weight:800;cursor:pointer;margin-top:2px}
+.ma-auth-submit:hover{background:#e0b77a}.ma-auth-submit:disabled{opacity:.65;cursor:wait}
+.ma-auth-error{color:#ffccc7;background:#4a2929;border:1px solid #78403c;border-radius:8px;padding:11px 13px;margin-bottom:16px;font-size:12px;line-height:1.5}
+.ma-auth-foot{display:flex;justify-content:center;align-items:center;gap:8px;color:#92949b;font-size:11px;margin-top:34px}
+.ma-auth-loading{display:flex;align-items:center;gap:10px;color:#d9b67c;font-size:13px}
+.ma-auth-right{display:flex;align-items:center;justify-content:center;padding:65px clamp(35px,5.2vw,95px);background:radial-gradient(ellipse at 95% 10%,#252119 0%,transparent 50%),#0c0e11}
+.ma-auth-feature{width:100%;max-width:620px}
+.ma-auth-feature h2{font:normal clamp(38px,3.6vw,59px)/1.06 Georgia,'Times New Roman',serif;letter-spacing:-.04em;color:#f5f2ed;margin:0 0 22px}
+.ma-auth-feature h2 em{color:#d7b47b;font-weight:400;font-style:normal}
+.ma-auth-feature-desc{font-size:14px;line-height:1.85;color:#afb0b7;max-width:550px;margin:0 0 31px}
+.ma-auth-features{display:grid;gap:21px;margin-bottom:38px}
+.ma-auth-features>div{display:flex;align-items:flex-start;gap:15px}
+.ma-auth-tick{display:grid;place-items:center;flex-shrink:0;width:28px;height:28px;border-radius:50%;background:#cda365;color:#17191d;font-size:16px;font-weight:800}
+.ma-auth-features strong{display:block;color:#f2eee8;font-size:13px;font-weight:700;margin:1px 0 5px}
+.ma-auth-features small{display:block;color:#9da1ab;font-size:12px;line-height:1.5}
+.ma-auth-preview{border:1px solid #38383a;background:#1b1d22;border-radius:12px;overflow:hidden;box-shadow:0 22px 70px #0005}
+.ma-auth-preview-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #35373b;padding:16px 20px;font-size:10px;letter-spacing:.15em;color:#d5af72;font-weight:750}
+.ma-auth-preview-ready{color:#b8c8b7;letter-spacing:0;font-weight:500;white-space:nowrap}.ma-auth-preview-ready i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#64a27d;margin-right:7px}
+.ma-auth-preview-steps{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:23px 20px}
+.ma-auth-preview-steps>div{flex:1;min-width:0;background:#25282e;border:1px solid #363941;border-radius:8px;padding:14px 10px;min-height:100px}
+.ma-auth-preview-steps>svg{flex-shrink:0;color:#c9a469}
+.ma-auth-step-num{display:block;color:#d9af6d;font-size:11px;margin-bottom:9px}.ma-auth-preview-steps strong{display:block;color:#f4f0e8;font-size:13px;margin-bottom:5px}.ma-auth-preview-steps small{display:block;color:#9b9da6;font-size:10px}
+/* Existing authenticated dashboard logout remains unchanged. */
+.ma-logout{width:calc(100% - 14px);margin:12px 7px 0;display:flex;align-items:center;gap:11px;border:1px solid #383b41;border-radius:10px;padding:12px 14px;background:transparent;color:#f0efed;cursor:pointer;font-size:13px;font-weight:650;text-align:left}.ma-logout:hover{background:#25272c;border-color:#685334}
+.ma-logout-mobile{display:none;background:#1d1f24;color:#e6b96e;border:1px solid #524631;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:750;cursor:pointer}
+@media(max-width:950px){.ma-auth-layout{grid-template-columns:1fr}.ma-auth-left{border-right:0;padding:55px 25px;min-height:100dvh}.ma-auth-right{display:none}.ma-auth-brand{margin-bottom:52px}}
+@media(max-width:780px){.ma-logout-mobile{display:inline-flex;align-items:center;justify-content:center;margin-left:auto}.ma-logout{display:none}}
+@media(max-width:420px){.ma-auth-left{padding:36px 22px}.ma-auth-brand{margin-bottom:44px}.ma-auth-brand img{width:52px;height:52px}.ma-auth-login h1{font-size:34px}}

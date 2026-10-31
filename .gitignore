@@ -1,0 +1,60 @@
+
+# Private credentials
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Frontend
+node_modules/
+dist/
+
+# Local data and generated images
+*.db
+*.sqlite
+*.sqlite3
+generated_images/
+history/
+storage/
+uploads/
+
+# Local backups
+*.bak
+*.before_*
+*.zip
+
+# Old installer folders and versions
+V[0-9]*/
+*Update/
+DarkLoginUpdate/
+LoginUpdate/
+SplitLoginUpdate/
+UIUpdate/
+
+# Backups and testing
+backup_*/
+closeup_selftest_out/
+*.layout_backup
+*.sessionfix.bak
+
+# Development installer scripts
+Install_*.py
+DeMaison_*Installer.py
+Setup_De_Maison_Direct.ps1
+
+# Local account setup and tests
+setup_client.py
+test_*.py
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+
