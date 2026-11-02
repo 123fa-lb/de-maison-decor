@@ -96,9 +96,9 @@ async def login(request: Request):
     now = time.monotonic()
     with _lock:
         # Basic per-process brute-force protection; use shared rate limiting for multiple workers.
-        recent = [t for t in _attempts.get(ip, []) if now - t < 900]
-        if len(recent) >= 5:
-            return response_error(429, 'Too many attempts. Try again in 15 minutes.')
+        recent = [t for t in _attempts.get(ip, []) if now - t < 10]
+        if len(recent) >= 10:
+            return response_error(429, 'Please wait a few seconds before trying again.')
         recent.append(now)
         _attempts[ip] = recent
     try:
