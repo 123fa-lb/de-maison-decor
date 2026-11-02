@@ -281,51 +281,42 @@ function StudioApp({ onLogout }) {
           {step === 2 && <><div className="section-top"><div><h2>Configure image creation</h2><p>{products.length} SKU(s) imported · {total} images selected</p></div><button className="secondary" onClick={() => setStep(1)}><ArrowLeft size={16} /> Change upload</button></div>
             <div className="toolbar"><div className="presets"><button onClick={() => applyPreset('A')}>Client preset: 8 / SKU <small>4 white + 4 others</small></button><button onClick={() => applyPreset('B')}>Client preset B <small>8 / SKU</small></button></div><div className="search"><Search size={17} /><input placeholder="Find SKU" value={query} onChange={e => setQuery(e.target.value)} /></div></div>
             <div className="sku-list">{visible.map(p => <section className="sku-card" key={p.id}><div className="sku-header"><label className="sku-title"><input type="checkbox" checked={p.selected} onChange={e => patch(p.id, { selected: e.target.checked })} /><span className="sku-icon"><Package size={19} /></span><span><strong>{p.sku}</strong><small>{p.files.length} original photo(s)</small></span></label><b>{Object.values(p.counts).reduce((s, n) => s + n, 0)} images</b></div><div className="thumbs">{p.files.slice(0, 5).map((f, i) => <FileThumb key={`${p.id}-${i}`} file={f} />)}{p.files.length > 5 && <span>+{p.files.length - 5}</span>}</div><div className="qty-grid">{CATEGORIES.map(c => <div className="qty" key={c.key}><span>{c.title}</span><div className="count"><button onClick={() => quantity(p.id, c.key, -1)} aria-label={`Decrease ${c.title}`}><Minus size={14} /></button><strong>{p.counts[c.key]}</strong><button onClick={() => quantity(p.id, c.key, 1)} aria-label={`Increase ${c.title}`}><Plus size={14} /></button></div></div>)}</div><div className="sku-extras">
-                  {/* DEMAISON_PREMIUM_OPTIONS_V2: UI only; original backend note flow is unchanged. */}
-                  <div style={{ display: 'grid', gap: 18, width: '100%', minWidth: 0 }}>
-                    <label style={{ display: 'grid', gap: 8, minWidth: 0, fontSize: 13 }}>
-                      <span style={{ fontWeight: 600, color: '#e8e1d5' }}>Special instructions</span>
-                      <input value={p.note} placeholder="Optional product-specific instructions" onChange={e => patch(p.id, { note: e.target.value })} style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }} />
-                    </label>
-                    <section style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', border: '1px solid #454039', borderRadius: 14, padding: 'clamp(14px, 2.5vw, 20px)', background: '#1b1d22', display: 'grid', gap: 16 }}>
-                      <div>
-                        <strong style={{ display: 'block', color: '#f2e6d4', fontSize: 15 }}>Product Customization</strong>
-                        <small style={{ display: 'block', color: '#a8a6a4', marginTop: 5 }}>Optional settings for this SKU</small>
-                      </div>
-                      <label style={{ display: 'flex', gap: 14, alignItems: 'center', width: '100%', boxSizing: 'border-box', padding: '14px 16px', border: p.autoColourCorrection ? '1px solid #d5ab6c' : '1px solid #44464b', background: p.autoColourCorrection ? '#332b20' : '#23262d', borderRadius: 12, cursor: 'pointer' }}>
-                        <input type="checkbox" checked={!!p.autoColourCorrection} onChange={e => patch(p.id, { autoColourCorrection: e.target.checked })} style={{ width: 21, height: 21, minWidth: 21, accentColor: '#d7ac68', cursor: 'pointer', margin: 0 }} />
-                        <span style={{ display: 'grid', gap: 4, minWidth: 0 }}>
-                          <strong style={{ fontSize: 14, color: '#f2e6d4' }}>Auto Colour Correction</strong>
-                          <small style={{ fontSize: 12, lineHeight: 1.5, color: '#aaa9a9' }}>Correct minor colour inconsistencies while preserving the original product colour.</small>
-                        </span>
+                  {/* DEMAISON_COMPACT_OPTIONS_V3: two-row compact UI; original requestImage note flow unchanged. */}
+                  <label>Special instructions<input value={p.note} placeholder="Optional product-specific instructions" onChange={e => patch(p.id, { note: e.target.value })} /></label>
+                  <section style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', border: '1px solid #454039', borderRadius: 12, padding: 12, background: '#1b1d22', display: 'grid', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: 13, color: '#f2e6d4' }}>Product Customization</strong>
+                      <small style={{ color: '#aaa9a9' }}>Optional · per SKU</small>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 10, alignItems: 'stretch' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', border: p.autoColourCorrection ? '1px solid #d5ab6c' : '1px solid #44464b', background: p.autoColourCorrection ? '#332b20' : '#23262d', borderRadius: 9, cursor: 'pointer', minWidth: 0 }}>
+                        <input type="checkbox" checked={!!p.autoColourCorrection} onChange={e => patch(p.id, { autoColourCorrection: e.target.checked })} style={{ width: 19, height: 19, minWidth: 19, accentColor: '#d7ac68', margin: 0, cursor: 'pointer' }} />
+                        <span style={{ display: 'grid', gap: 2, minWidth: 0 }}><strong style={{ fontSize: 13, color: '#f2e6d4' }}>Auto Colour Correction</strong><small style={{ color: '#aaa9a9', fontSize: 11 }}>Fix minor colour variation</small></span>
                       </label>
-                      <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
-                        <label htmlFor={`dmd-infographic-${p.id}`} style={{ fontWeight: 600, fontSize: 14, color: '#f2e6d4' }}>Custom Infographic Text <small style={{ fontWeight: 400, color: '#aaa9a9' }}>(infographic images only)</small></label>
-                        <textarea id={`dmd-infographic-${p.id}`} rows={3} maxLength={1000} value={p.infographicText || ''} placeholder="Type the exact wording you want on the infographic..." onChange={e => patch(p.id, { infographicText: e.target.value })} style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', padding: 13, borderRadius: 10, background: '#14171c', color: '#f4f0e8', border: '1px solid #55525a', font: 'inherit', lineHeight: 1.5, resize: 'vertical' }} />
-                        <small style={{ color: '#aaa9a9', lineHeight: 1.5 }}>Choose a ready-made example below, or type your own text. Click a suggestion to add it.</small>
-                      </div>
-                      <div style={{ display: 'grid', gap: 10, minWidth: 0 }}>
-                        <strong style={{ fontSize: 13, color: '#e6d6c0' }}>Home Decor — Quick Examples</strong>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                          {[
-                            'Premium Leather Finish', 'Elegant Home Decor', 'Handcrafted with Care',
-                            'Timeless Classic Design', 'Luxury Decorative Accent', 'Beautiful Textured Finish',
-                            'Modern Minimalist Style', 'Premium Quality Material', 'Perfect for Gifting',
-                            'Stylish Tabletop Decor', 'Sophisticated Home Styling', 'Classic & Contemporary',
-                            'Elegant Storage Solution', 'Statement Decor Piece', 'Designed for Everyday Elegance'
-                          ].map(example => (
-                            <button key={example} type="button" onClick={() => {
-                              const current = (p.infographicText || '').trim();
-                              if (current.split('\n').some(line => line.trim() === example)) return;
-                              patch(p.id, { infographicText: [current, example].filter(Boolean).join('\n').slice(0, 1000) });
-                            }} style={{ border: '1px solid #65543d', background: '#29251f', color: '#e8c995', padding: '8px 11px', borderRadius: 20, cursor: 'pointer', fontSize: 12, lineHeight: 1.35, whiteSpace: 'normal', textAlign: 'left', maxWidth: '100%' }}>
-                              + {example}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </section>
-                  </div>
+                      <label style={{ display: 'grid', gap: 4, minWidth: 0, fontSize: 12, color: '#e8d7bc' }}>
+                        <span>Custom Infographic Text <small style={{ color: '#aaa9a9' }}>(optional)</small></span>
+                        <input value={p.infographicText || ''} maxLength={1000} placeholder="Type your infographic wording..." onChange={e => patch(p.id, { infographicText: e.target.value })} style={{ width: '100%', minWidth: 0, height: 36, boxSizing: 'border-box', padding: '7px 10px', borderRadius: 8, background: '#14171c', color: '#f4f0e8', border: '1px solid #55525a', font: 'inherit' }} />
+                      </label>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 10, alignItems: 'end' }}>
+                      <label style={{ display: 'grid', gap: 4, minWidth: 0, fontSize: 12, color: '#e8d7bc' }}>
+                        <span>Home Decor — Quick Examples</span>
+                        <select id={`dmd-example-${p.id}`} defaultValue="" style={{ width: '100%', height: 36, minWidth: 0, boxSizing: 'border-box', padding: '6px 9px', borderRadius: 8, background: '#23262d', color: '#e8c995', border: '1px solid #65543d' }}>
+                          <option value="">Choose from 15 examples...</option>
+                          {['Premium Leather Finish','Elegant Home Decor','Handcrafted with Care','Timeless Classic Design','Luxury Decorative Accent','Beautiful Textured Finish','Modern Minimalist Style','Premium Quality Material','Perfect for Gifting','Stylish Tabletop Decor','Sophisticated Home Styling','Classic & Contemporary','Elegant Storage Solution','Statement Decor Piece','Designed for Everyday Elegance'].map(x => <option key={x} value={x}>{x}</option>)}
+                        </select>
+                      </label>
+                      <button type="button" onClick={() => {
+                        const el = document.getElementById(`dmd-example-${p.id}`);
+                        const example = el?.value;
+                        if (!example) return;
+                        const current = (p.infographicText || '').trim();
+                        if (current.split(' | ').includes(example)) return;
+                        patch(p.id, { infographicText: [current, example].filter(Boolean).join(' | ').slice(0, 1000) });
+                        el.value = '';
+                      }} style={{ height: 36, border: '1px solid #b58b51', background: '#342a1c', color: '#f1ce96', borderRadius: 8, cursor: 'pointer', padding: '6px 14px', fontWeight: 600, fontSize: 12 }}>+ Add selected example</button>
+                    </div>
+                  </section>
                   <div className="dimension"><span>Dimensions (needed only for Dimension images)</span><div>{[{ key: 'width', label: 'Length (L)' }, { key: 'depth', label: 'Breadth (B)' }, { key: 'height', label: 'Height (H)' }].map(({ key, label }) => <input key={key} type="number" step="any" min="0" value={p.dimensions[key]} placeholder={label} onChange={e => patch(p.id, { dimensions: { ...p.dimensions, [key]: e.target.value } })} />)}<select value={p.dimensions.unit} onChange={e => patch(p.id, { dimensions: { ...p.dimensions, unit: e.target.value } })}><option value="cm">cm</option><option value="mm">mm</option><option value="in">in</option></select></div></div></div></section>)}</div>
             <div className="bottom-actions"><span>{selected.length} SKUs · {total} requested images</span><button className="primary" onClick={() => { const issue = validate(); if (issue) setError(issue); else { setError(''); setConfirm(true); } }}><Sparkles size={17} /> Create {total} images</button></div></>}
           {step === 3 && <section className="progress-panel"><div className="pulse"><Sparkles size={30} /></div><h2>{working ? 'Creating your images' : 'Generation finished'}</h2><p>{message}</p><strong>{progress.done} / {progress.total}</strong><progress value={progress.done} max={progress.total || 1} /><small>Keep this tab open until complete.</small>{completed && <button className="primary" onClick={() => setStep(4)}>Review images <ChevronRight size={16} /></button>}</section>}
