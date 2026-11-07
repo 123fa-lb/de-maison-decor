@@ -13,6 +13,7 @@ import jwt
 from dotenv import load_dotenv
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
@@ -107,14 +108,14 @@ async def login(request: Request):
         password = str(data.get('password', ''))
         if not username or not password:
             return response_error(400, 'Username and password are required')
-        user = database().users.find_one({'username': username, 'active': True, 'role': 'client'})
-        if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+        user = await run_in_threadpool(database().users.find_one, {'username': username, 'active': True, 'role': 'client'})
+        if not user or not await run_in_threadpool(bcrypt.checkpw, password.encode('utf-8'), user['password_hash'].encode('utf-8')):
             return response_error(401, 'Invalid username or password')
         now_utc = datetime.now(timezone.utc)
         expires = now_utc + timedelta(days=7)
         jti = secrets.token_urlsafe(32)
-        database().sessions.create_index('expires_at', expireAfterSeconds=0)
-        database().sessions.insert_one({'_id': hashlib.sha256(jti.encode()).hexdigest(), 'username': username, 'expires_at': expires})
+
+        await run_in_threadpool(database().sessions.insert_one, {'_id': hashlib.sha256(jti.encode()).hexdigest(), 'username': username, 'expires_at': expires})
         token = jwt.encode({'sub': username, 'iat': now_utc, 'exp': expires, 'jti': jti}, secret(), algorithm='HS256')
         response = JSONResponse({'authenticated': True, 'username': username}, headers={'Cache-Control': 'no-store'})
         response.set_cookie(_cookie_name, token, max_age=7*86400, **cookie_options())
@@ -128,7 +129,7 @@ async def login(request: Request):
 
 
 @router.get('/me')
-async def me(request: Request):
+def me(request: Request):
     user = current_user(request)
     if not user:
         return response_error(401, 'Not authenticated')
@@ -162,6 +163,6 @@ async def protect_api(request: Request, call_next):
         origin = request.headers.get('origin', '').rstrip('/')
         if origin not in allowed_origins():
             return response_error(403, 'Request origin not allowed')
-    if not current_user(request):
+    if not await run_in_threadpool(current_user, request):
         return response_error(401, 'Login required')
     return await call_next(request)

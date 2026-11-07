@@ -242,45 +242,66 @@ def _circle_detail(board, image, box, x, y, diameter):
     bd.ellipse((x + 2, y + 2, x + diameter - 2, y + diameter - 2), outline=GOLD, width=6)
 
 
+# DEMAISON_INFOGRAPHIC_ACCURACY_V2
 def make_infographic(image, note="", size=S):
+    """Source-grounded infographic without invented claims or connectors."""
     board = Image.new("RGB", (size, size), IVORY)
     d = ImageDraw.Draw(board)
 
-    # Warm premium editorial background.
-    d.rectangle((0, 0, size, 340), fill=BEIGE)
-    d.text((110, 78), "PRODUCT FEATURES", font=_font(82, True), fill=(78, 56, 36))
-    d.text((112, 198), "Design details captured from the actual product", font=_font(30), fill=MUTED)
-    d.line((110, 270, 1890, 270), fill=GOLD, width=4)
+    d.rectangle((0, 0, size, int(size * .17)), fill=BEIGE)
+    d.text((int(size*.055), int(size*.039)),
+           "PRODUCT DETAILS", font=_font(int(size*.041), True),
+           fill=INK)
+    d.text((int(size*.056), int(size*.105)),
+           "A closer look at the actual design",
+           font=_font(int(size*.016)), fill=MUTED)
 
     product = _safe_product(image)
-    hero_panel = (90, 360, 1215, 1755)
-    d.rounded_rectangle(hero_panel, radius=34, fill=WHITE)
-    _place_contained(board, product, (130, 420, 1175, 1710), pad=8)
+    hero = tuple(int(v*size/2000) for v in (90, 365, 1215, 1780))
+    d.rounded_rectangle(hero, radius=int(size*.018), fill=WHITE)
+    _place_contained(board, product,
+                     tuple(int(v*size/2000) for v in
+                           (130, 410, 1175, 1720)), pad=8)
 
-    # Sample-like right column with three detail circles.
-    details = _detail_candidates(product)
-    cx = 1350
-    dia = 350
-    starts = [430, 870, 1310]
-    labels = [
-        ("Design Detail", "Visible product feature"),
-        ("Surface Finish", "True texture and material"),
-        ("Form & Build", "Real shape and construction"),
-    ]
-    for i, top in enumerate(starts):
-        _circle_detail(board, product, details[i], cx, top, dia)
-        d.text((cx + dia // 2, top + dia + 24), labels[i][0], font=_font(34, True), fill=(64, 49, 37), anchor="mt")
-        d.text((cx + dia // 2, top + dia + 72), labels[i][1], font=_font(23), fill=MUTED, anchor="mt")
+    candidates = _detail_candidates(product)
+    chosen = []
+    for box in candidates:
+        crop = product.crop(box).convert("L")
+        stat = ImageStat.Stat(crop.resize((120, 120)))
+        if stat.stddev[0] < 8:
+            continue
+        if any(
+            max(0, min(box[2], old[2])-max(box[0], old[0]))
+            * max(0, min(box[3], old[3])-max(box[1], old[1]))
+            > .30 * min(
+                (box[2]-box[0])*(box[3]-box[1]),
+                (old[2]-old[0])*(old[3]-old[1])
+            )
+            for old in chosen
+        ):
+            continue
+        chosen.append(box)
+        if len(chosen) == 3:
+            break
 
-    # Minimal premium footer badges (text only, safe for all products).
-    footer_y = 1840
-    d.line((110, footer_y - 24, 1890, footer_y - 24), fill=PALE, width=3)
-    items = ["Premium Quality", "Home Decor Ready", "Gift-worthy", "Crafted Finish"]
-    xs = [250, 720, 1190, 1660]
-    for x, text in zip(xs, items):
-        d.ellipse((x - 42, footer_y - 4, x + 42, footer_y + 80), outline=GOLD, width=4)
-        d.text((x, footer_y + 38), "•", font=_font(34, True), fill=GOLD, anchor="mm")
-        d.text((x, footer_y + 122), text, font=_font(25, True), fill=(84, 68, 51), anchor="mm")
+    labels = ("Visible design detail", "Surface detail", "Construction detail")
+    starts = (430, 880, 1330)
+    x = int(size * .675)
+    diameter = int(size * .175)
+
+    for i, box in enumerate(chosen):
+        top = int(starts[i] * size / 2000)
+        _circle_detail(board, product, box, x, top, diameter)
+        d.text((x + diameter//2, top + diameter + int(size*.012)),
+               labels[i], font=_font(int(size*.016), True),
+               fill=INK, anchor="mt")
+
+    d.line((int(size*.055), int(size*.92),
+            int(size*.945), int(size*.92)), fill=PALE,
+           width=max(2, int(size*.002)))
+    d.text((int(size*.055), int(size*.94)),
+           "DETAILS FROM THE SUPPLIED PRODUCT IMAGE",
+           font=_font(int(size*.013)), fill=MUTED)
 
     return board
 

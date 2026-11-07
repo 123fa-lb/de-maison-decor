@@ -123,7 +123,11 @@ from backend.services.maison_client_v8 import make_infographic, make_dimensions,
 from backend.services.closeup_prompt import build_closeup_prompt
 from backend.services.closeup_analysis import analyze_feature, feature_crop
 from backend.services.closeup_crop import finalize_closeup, assess_closeup
-
+# DEMAISON_FIX_V4: consolidated infographic prompt, lifestyle scale control, QA gate
+from backend.services.infographic_prompt import build_infographic_prompt
+from backend.services.lifestyle_scale import plan_lifestyle_scale, build_lifestyle_prompt, parse_dimensions_cm, verify_lifestyle_result
+from backend.services.generation_qa import run_quality_gate, gate_enabled
+from backend.services.closeup_analysis import verify_closeup_result
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 router = APIRouter(prefix="/api/studio", tags=["Maison Studio"])
@@ -1422,6 +1426,7 @@ Generate ONE clean dimension image using Gemini.
         # a reference crop for the single paid image request. Any failure falls back to
         # the single-request prompt. Disable with DEMAISON_CLOSEUP_ANALYSIS=0.
         closeup_mode = "single"
+        closeup_qa_ctx = None  # DEMAISON_FIX_V4: (analysis, reference image) for the result check
         if category == "closeup":
             # Optional: use a different (e.g. higher-resolution) image model for Close-up ONLY.
             closeup_model_override = os.getenv("GEMINI_CLOSEUP_IMAGE_MODEL", "").strip()
@@ -1439,7 +1444,7 @@ Generate ONE clean dimension image using Gemini.
                         crop_buf = BytesIO()
                         crop_img.save(crop_buf, "JPEG", quality=95)
                         crop_part = types.Part.from_bytes(data=crop_buf.getvalue(), mime_type="image/jpeg")
-                        if os.getenv("DEMAISON_CLOSEUP_INCLUDE_FULL_REFS", "0").strip() == "1":
+                        if os.getenv("DEMAISON_CLOSEUP_INCLUDE_FULL_REFS", "1").strip() == "1":
                             parts.insert(0, crop_part)
                             closeup_mode = "analysis+crop"
                         else:
@@ -1449,6 +1454,9 @@ Generate ONE clean dimension image using Gemini.
                             closeup_mode = "crop-only"
                     else:
                         closeup_mode = "analysis"
+                    ref_for_qa = crop_img if crop_img is not None else (
+                        closeup_refs[min(analysis["image_index"], len(closeup_refs) - 1)] if closeup_refs else None)
+                    closeup_qa_ctx = (analysis, ref_for_qa)
                     print(f"[MAISON STUDIO] {sku}/closeup feature={analysis['feature_name']!r} mode={closeup_mode} crop={crop_info}", flush=True)
                     parts[-1] = types.Part.from_text(
                         text=build_closeup_prompt(
@@ -1460,7 +1468,26 @@ Generate ONE clean dimension image using Gemini.
             except Exception as ana_exc:
                 print(f"[MAISON STUDIO] {sku}/closeup analysis skipped: {ana_exc}", flush=True)
         # DEMAISON_CLOSEUP_V41_ANALYSIS_END
-
+        # DEMAISON_FIX_V4_LIFESTYLE_START
+        # Lifestyle: ONE authoritative prompt with explicit real-world scale (seller dimensions
+        # first, otherwise a typical-size estimate). It replaces the stacked lifestyle prompts and
+        # the old late "scale" additions, which contradicted each other. One small text request.
+        lifestyle_ctx = None
+        lifestyle_ref_parts = []
+        if category == "lifestyle":
+            lifestyle_ref_parts = list(parts[:-1])
+            try:
+                lifestyle_ctx = plan_lifestyle_scale(
+                    client, types, lifestyle_ref_parts,
+                    os.getenv("GEMINI_ANALYSIS_MODEL", "gemini-2.5-flash").strip(),
+                    width, height, depth, unit, note,
+                )
+                prompt = build_lifestyle_prompt(note, lifestyle_ctx["plan"], lifestyle_ctx["dims"])
+            except Exception as ls_exc:
+                print(f"[MAISON STUDIO] {sku}/lifestyle scale planning failed: {ls_exc}", flush=True)
+                prompt = build_lifestyle_prompt(note, None, parse_dimensions_cm(width, height, depth, unit))
+            parts[-1] = types.Part.from_text(text=prompt)
+        # DEMAISON_FIX_V4_LIFESTYLE_END
         # DEMAISON_CLOSEUP_V40_CONFIG_START
         # Close-up only: ask the model for a native 1:1 canvas so no local crop or
         # padding is needed. Building the config is a local operation (no API call);
@@ -1488,6 +1515,36 @@ Generate ONE clean dimension image using Gemini.
                     response_modalities=["IMAGE", "TEXT"],
                 )
         # DEMAISON_CLOSEUP_V40_CONFIG_END
+
+
+        import re
+        # DEMAISON_PROMPT_DELIVERY_V1
+        _maison_prompt_before_accuracy = len(prompt)
+        # DEMAISON_INFOGRAPHIC_PROMPT_V4: ONE authoritative infographic prompt (see infographic_prompt.py).
+        # Replaces PREMIUM_ACCURACY_V5, FACTUAL_ACCURACY, CONNECTOR_ACCURACY_V6, PREMIUM_CONNECTORS_V2
+        # and TITLE_CENTER_V1. Connector lines are added afterwards from verified matches.
+        if category == "infographic":
+            prompt = build_infographic_prompt(note)
+        # DEMAISON_FIX_V4: the former LIFESTYLE_SCALE_V2 and CLIENT_ACCURACY_V1 late blocks were removed.
+        # They contradicted the Close-up analysis ("prefer a wider crop"), duplicated the Lifestyle
+        # scale rules (with literal backslash-n text) and repeated infographic rules that now live in
+        # infographic_prompt.py / lifestyle_scale.py.
+        # Deliver the final accuracy rules to Gemini.
+        # Do not replace the existing feature-analysis prompt.
+        _maison_late_accuracy = prompt[_maison_prompt_before_accuracy:]
+        if _maison_late_accuracy.strip():
+            parts.append(
+                types.Part.from_text(text=_maison_late_accuracy)
+            )
+
+        # DEMAISON_INFOGRAPHIC_REQUEST_FIX_V4
+        # Preserve image references, replace conflicting text instructions.
+        if category == "infographic":
+            parts = [
+                part for part in parts
+                if getattr(part, "inline_data", None) is not None
+            ]
+            parts.append(types.Part.from_text(text=prompt))
 
         response = client.models.generate_content(
 
@@ -1531,11 +1588,27 @@ Generate ONE clean dimension image using Gemini.
                 break
 
         if not result_bytes:
-
             raise ValueError("Gemini returned no image")
-
+        # DEMAISON_QA_GATE_V1_START (Lifestyle + Close-up only; infographic connectors are handled below)
+        qa_header = None
+        qa_extra_usage = (0, 0)
+        if category in ("lifestyle", "closeup") and gate_enabled():
+            _qa_model = os.getenv("GEMINI_ANALYSIS_MODEL", "gemini-2.5-flash").strip()
+            _verify = None
+            if category == "lifestyle" and lifestyle_ctx:
+                _verify = lambda im: verify_lifestyle_result(
+                    client, types, _qa_model, lifestyle_ref_parts, im, lifestyle_ctx["size"])
+            elif category == "closeup" and closeup_qa_ctx and closeup_qa_ctx[1] is not None:
+                _verify = lambda im: verify_closeup_result(
+                    client, types, _qa_model, closeup_qa_ctx[1], im, closeup_qa_ctx[0])
+            if _verify is not None:
+                result_bytes, response, _qa_report, qa_extra_usage = run_quality_gate(
+                    f"{sku}/{category}", client, types, model, config, parts,
+                    result_bytes, response, _verify,
+                )
+                qa_header = str(_qa_report.get("final", ""))[:60]
+        # DEMAISON_QA_GATE_V1_END
         closeup_qa_header = None
-
         with Image.open(BytesIO(result_bytes)) as generated:
 
             generated = ImageOps.exif_transpose(generated).convert("RGB")
@@ -1551,6 +1624,11 @@ Generate ONE clean dimension image using Gemini.
             # Non-white images should fill square without blurred sidebars.
 
             canvas = source  # V17: preserve native Gemini framing
+            # DEMAISON_UNIVERSAL_INFOGRAPHIC_COMPOSE_V1
+            if category == "infographic":
+                from backend.services.infographic_composer import compose_infographic
+                canvas = source  # Preserve premium Gemini infographic
+
 
             # DEMAISON_CLOSEUP_V40_POST_START
             # No cropping. Framing is decided by Gemini only. We pad to square only if
@@ -1572,6 +1650,9 @@ Generate ONE clean dimension image using Gemini.
                     print(f"[MAISON STUDIO] {sku}/closeup post-process skipped: {qa_exc}", flush=True)
             # DEMAISON_CLOSEUP_V40_POST_END
 
+
+            # DEMAISON_FIX_V5: the infographic is delivered exactly as Gemini generated it.
+            # No connector arrows/lines are generated, drawn, erased or "corrected" (no extra Gemini calls).
             output = BytesIO()
             canvas.save(output, "JPEG", quality=95, subsampling=0)
 
@@ -1587,9 +1668,8 @@ Generate ONE clean dimension image using Gemini.
 
             True,
 
-            int(getattr(usage, "prompt_token_count", 0) or 0),
-
-            int(getattr(usage, "candidates_token_count", 0) or 0),
+            int(getattr(usage, "prompt_token_count", 0) or 0) + qa_extra_usage[0],
+            int(getattr(usage, "candidates_token_count", 0) or 0) + qa_extra_usage[1],
 
             variation=variation,
 
@@ -1601,7 +1681,8 @@ Generate ONE clean dimension image using Gemini.
         if closeup_qa_header:
             response_headers["X-Closeup-QA"] = closeup_qa_header
             response_headers["X-Closeup-Mode"] = closeup_mode
-
+        if qa_header:
+            response_headers["X-DeMaison-QA"] = qa_header
         return Response(
 
             content=output.getvalue(),

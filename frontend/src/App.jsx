@@ -212,7 +212,7 @@ function StudioApp({ onLogout }) {
       try {
         const blob = await requestImage(p, cat.key, i);
         const item = { id: crypto.randomUUID(), productId: p.id, sku: p.sku, category: cat.key, categoryTitle: cat.title, number: i, blob, url: imageURL(blob), approved: false };
-        made.push(item); setResults([...made]); success = true;
+        made.push(item); setResults([...made]); window.dispatchEvent(new Event('maison-history-updated')); success = true;
       } catch (e) { log.push(`${p.sku} / ${cat.title}: ${e.message}`); setError(log.join(' | ')); break generationLoop; }
       const after = await authFetch(`${API}/api/maison/usage`).then(r => r.ok ? r.json() : null).catch(() => null);
       const row = { id: crypto.randomUUID(), date: new Date().toLocaleString(), sku: p.sku, category: cat.title, image: i, success,

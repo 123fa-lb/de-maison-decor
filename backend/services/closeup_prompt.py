@@ -11,7 +11,7 @@ Produce ONE square 1:1 premium MACRO product-detail photograph of this exact pro
 
 _CHOOSE = """
 STEP 1 - CHOOSE THE FEATURE (decide silently, write no analysis)
-Look across ALL reference photographs and pick the one feature with the most visual information that is clearly resolved in at least one reference. Rank: (1) functional hardware or construction (closure, lid, cap, hinge, handle, spout, latch, clasp, knob, joint); (2) crafted surface (carving, engraving, embossing, inlay, weave, stitching, cutwork, pattern, glaze, grain); (3) edges and transitions (rim, bevel, seam, frame, corner). Reject large smooth surfaces and anything you would have to imagine. If the product is plain, choose its most informative real construction detail. Never borrow features from any other product."""
+Look across ALL reference photographs and pick the one feature with the most visual information that is clearly resolved in at least one reference. Rank: (1) the signature feature a shopper would recognise this product by, such as genuine engraving, a decorative pattern, a map, a dial, carving, embossing, inlay, weave, stitching, cutwork, glaze or distinctive grain; (2) functional hardware or construction (closure, lid, cap, hinge, handle, spout, latch, clasp, knob, joint); (3) edges and transitions (rim, bevel, seam, frame, corner). Reject large smooth surfaces and anything you would have to imagine. If the product is plain, choose its most informative real construction detail. Never borrow features from any other product."""
 
 _CHOSEN = """
 CHOSEN FEATURE (already decided; do not choose another)

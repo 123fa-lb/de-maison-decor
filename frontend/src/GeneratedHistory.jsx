@@ -13,7 +13,12 @@ export default function GeneratedHistory(){
     }catch(e){setError(e.message||'Could not load image history');}
     finally{setLoading(false)}
   }
-  useEffect(()=>{load()},[]);
+  useEffect(()=>{
+    const refresh = () => load();
+    window.addEventListener('maison-history-updated', refresh);
+    load();
+    return () => window.removeEventListener('maison-history-updated', refresh);
+  },[]);
   const groups=useMemo(()=>{
     const result=new Map();
     for(const im of images){const date=im.created_at.slice(0,10);if(!result.has(date))result.set(date,[]);result.get(date).push(im)}

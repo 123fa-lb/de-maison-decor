@@ -55,7 +55,7 @@ def _store(data, sku, category):
 
 async def archive_generated_image(request,call_next):
     response=await call_next(request)
-    if request.method!='POST' or request.url.path not in ('/api/studio/generate','/api/studio/compose-local') or response.status_code!=200 or not response.headers.get('content-type','').startswith('image/jpeg'):
+    if request.method!='POST' or request.url.path not in ('/api/studio/generate','/api/studio/compose-local','/api/maison/generate') or response.status_code!=200 or not response.headers.get('content-type','').startswith('image/jpeg'):
         return response
     # Starlette BaseHTTPMiddleware returns a streaming response. Reconstruct it after archiving.
     chunks=[]

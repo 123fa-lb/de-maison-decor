@@ -7,6 +7,7 @@ from backend.services.white_background import process_white
 
 app = FastAPI(title="Maison Studio API", version="1.1.0")
 from backend.auth import router as auth_router, protect_api, allowed_origins
+from backend.auth import database
 app.include_router(auth_router)
 app.middleware("http")(protect_api)
 
@@ -519,3 +520,8 @@ from backend.image_history import router as image_history_router, archive_genera
 app.include_router(image_history_router)
 app.middleware("http")(archive_generated_image)
 start_history_cleanup()
+
+
+@app.on_event("startup")
+def initialize_auth_indexes():
+    database().sessions.create_index('expires_at', expireAfterSeconds=0)
